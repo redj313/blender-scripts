@@ -20,7 +20,7 @@ bl_info = {
     "name": "Smurfs Tools",
     "description": "Basic Proxy tool for Compositor - Node Wrangler addon must be activated",
     "author": "redj",
-    "version": (0, 0, 1),
+    "version": (0, 0, 2),
     "blender": (2, 81, 0),
     "location": "Compositor > Properties Panel > Item",
     "warning": "",
@@ -78,8 +78,6 @@ def switch_suffix(a, b):
             
 def transferImageResolution(image):
     
-    tree = bpy.context.scene.node_tree
-    
     if image.type == 'MULTILAYER':
         # HACK to get the resolution of a multilayer EXR through movieclip
         movieclip = data.movieclips.load(image.filepath)
@@ -122,8 +120,9 @@ class SM_OT_SmurfSwitch2(Operator):
         return {'FINISHED'}
     
 class SM_OT_transferImageResolution(Operator):
-    bl_label = "Get From Active Node"
+    bl_label = "Set Resolution From Active"
     bl_idname = "sm.smurfimgres"
+    bl_description = "Automatically sets the render resolution from the active image node"
     
     @classmethod
     def poll(cls,context):
@@ -161,36 +160,66 @@ class smurfPanel(bpy.types.Panel):
         
         layout.label(text="Proxy Image Switch")
         
+        #layout.use_property_split = True
+
         layout.prop(smurf, "suf1")
         layout.prop(smurf, "suf2")
         
+        row = layout.row(align=True)  
+
+        row.operator(SM_OT_SmurfSwitch1.bl_idname, icon='LOOP_FORWARDS')
+        row.operator(SM_OT_SmurfSwitch2.bl_idname, icon='LOOP_BACK')
+
         col = layout.column(align=True)
-        col.operator(SM_OT_SmurfSwitch1.bl_idname, icon='LOOP_FORWARDS')
-        col.operator(SM_OT_SmurfSwitch2.bl_idname, icon='LOOP_BACK')
+
+        col.separator()        
+        col.operator(bpy.types.NODE_OT_nw_reload_images.bl_idname, icon='FILE_REFRESH')
         
         col.separator()
-        
-        layout.label(text="Node Tools (Node Wrangler)")
-        
-        col = layout.column(align=True)
-        col.operator(bpy.types.NODE_OT_nw_reload_images.bl_idname, icon='FILE_REFRESH')
-        col.operator(bpy.types.NODE_OT_nw_bg_reset.bl_idname, icon='ZOOM_PREVIOUS')
-        col = layout.column(align=True)
-        col.operator(bpy.types.NODE_OT_nw_swap_links.bl_idname, icon='ARROW_LEFTRIGHT')
-        col = layout.column(align=True)
-        col.operator(bpy.types.NODE_OT_nw_frame_selected.bl_idname, icon='STICKY_UVS_LOC')
-        
         col.separator()
 
-        layout.label(text="Render Resolution")
-        
+        layout.use_property_split = True
+        layout.use_property_decorate = False
+
         col = layout.column(align=True)
-        col.prop(rd, "resolution_x", text="X")
-        col.prop(rd, "resolution_y", text="Y")
+        col.prop(rd, "resolution_x", text="Resolution X")
+        col.prop(rd, "resolution_y", text="Resolution Y")
         col.prop(rd, "resolution_percentage", text="%")
-        
-        col = layout.column(align=True)
+
+        col.separator()
+
         col.operator(SM_OT_transferImageResolution.bl_idname, icon='NODE_SEL')
+
+class colorManagement(bpy.types.Panel):
+    bl_label = "Color Management"
+    bl_idname = "NODE_PT_color_management"
+    bl_space_type = 'NODE_EDITOR'
+    bl_region_type = "UI"
+    bl_category = "Item"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.use_property_split = True
+        layout.use_property_decorate = False  # No animation.
+
+        scene = context.scene
+        view = scene.view_settings
+
+        flow = layout.grid_flow(row_major=True, columns=0, even_columns=False, even_rows=False, align=True)
+
+        col = flow.column()
+        col.prop(scene.display_settings, "display_device")
+
+        col.separator()
+
+        col.prop(view, "view_transform")
+        col.prop(view, "look")
+
+        col = flow.column()
+        col.prop(view, "exposure")
+        col.prop(view, "gamma")
+
+        col.separator()
                 
 # --------------------------------------------------------------
 # REGISTER
@@ -202,6 +231,7 @@ classes = (
     SM_OT_transferImageResolution,
     smurfProps,
     smurfPanel,
+    colorManagement,
 )
 
 def register():
