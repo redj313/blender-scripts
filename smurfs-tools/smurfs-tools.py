@@ -20,7 +20,7 @@ bl_info = {
     "name": "Smurfs Tools",
     "description": "Basic Proxy tool for Compositor - Node Wrangler addon must be activated",
     "author": "redj",
-    "version": (0, 0, 2),
+    "version": (0, 0, 3),
     "blender": (2, 81, 0),
     "location": "Compositor > Properties Panel > Item",
     "warning": "",
@@ -73,11 +73,12 @@ def switch_suffix(a, b):
     
     for nodes in tree.nodes:
         if nodes.type == 'IMAGE':
-            nodes.image.filepath = nodes.image.filepath.replace(a, b)
-            nodes.image.name = nodes.image.name.replace(a, b)
+            if nodes.image:
+                nodes.image.filepath = nodes.image.filepath.replace(a, b)
+                nodes.image.name = nodes.image.name.replace(a, b)
             
 def transferImageResolution(image):
-    
+    # Thanks to Vincent Gires for the following hack!
     if image.type == 'MULTILAYER':
         # HACK to get the resolution of a multilayer EXR through movieclip
         movieclip = data.movieclips.load(image.filepath)
@@ -99,7 +100,7 @@ class SM_OT_SmurfSwitch1(Operator):
     bl_description = "Replaces string A with string B in the image filename (to load an alternate version)"
     
     def execute(self, context):
-        scene = bpy.context.scene
+        scene = context.scene
         smurf = scene.smurf
         
         switch_suffix(smurf.suf1, smurf.suf2)
@@ -112,7 +113,7 @@ class SM_OT_SmurfSwitch2(Operator):
     bl_description = "Replaces string B with string A in the image filename"
     
     def execute(self, context):
-        scene = bpy.context.scene
+        scene = context.scene
         smurf = scene.smurf
         
         switch_suffix(smurf.suf2, smurf.suf1)
@@ -126,10 +127,11 @@ class SM_OT_transferImageResolution(Operator):
     
     @classmethod
     def poll(cls,context):
-        
+        # This operator will only be active if the active node is an image node, with an image loaded.
         tree = bpy.context.scene.node_tree
         
-        return tree.nodes.active.type == 'IMAGE'
+        if tree.nodes.active.type == 'IMAGE':
+            return tree.nodes.active.image
     
     def execute(self, context):
         
@@ -144,24 +146,20 @@ class SM_OT_transferImageResolution(Operator):
 # --------------------------------------------------------------
 
 class smurfPanel(bpy.types.Panel):
-    # panel attributes
     bl_label = "Smurfs Tools"
     bl_idname = "NODE_PT_smurfs"
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = "UI"
     bl_category = "Item"
-        
-    # draw funtions
+    
     def draw(self, context):
         layout = self.layout
-        scene = bpy.context.scene
+        scene = context.scene
         smurf = scene.smurf
         rd = scene.render
         
         layout.label(text="Proxy Image Switch")
         
-        #layout.use_property_split = True
-
         layout.prop(smurf, "suf1")
         layout.prop(smurf, "suf2")
         
@@ -172,7 +170,8 @@ class smurfPanel(bpy.types.Panel):
 
         col = layout.column(align=True)
 
-        col.separator()        
+        col.separator()
+        # The following operator is from the Node Wrangler addon - it has to be activated obviously.         
         col.operator(bpy.types.NODE_OT_nw_reload_images.bl_idname, icon='FILE_REFRESH')
         
         col.separator()
@@ -191,6 +190,7 @@ class smurfPanel(bpy.types.Panel):
         col.operator(SM_OT_transferImageResolution.bl_idname, icon='NODE_SEL')
 
 class colorManagement(bpy.types.Panel):
+    # Duplicate of the same panel from render properties - handy to access it from here
     bl_label = "Color Management"
     bl_idname = "NODE_PT_color_management"
     bl_space_type = 'NODE_EDITOR'
