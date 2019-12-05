@@ -20,7 +20,7 @@ bl_info = {
     "name": "Smurfs Tools",
     "description": "Basic Proxy tool for Compositor - Node Wrangler addon must be activated",
     "author": "redj",
-    "version": (0, 0, 3),
+    "version": (0, 0, 5),
     "blender": (2, 81, 0),
     "location": "Compositor > Properties Panel > Item",
     "warning": "",
