@@ -67,17 +67,23 @@ class smurfProps(PropertyGroup):
 # -------------------------------------------------------------
 
 
-def switch_suffix(a, b):
+def switch_suffix(a, b, scene, self):
     
-    tree = bpy.context.scene.node_tree
+    tree = scene.node_tree
+    num_switched = 0
     
     for nodes in tree.nodes:
         if nodes.type == 'IMAGE':
             if nodes.image:
                 nodes.image.filepath = nodes.image.filepath.replace(a, b)
                 nodes.image.name = nodes.image.name.replace(a, b)
+                num_switched += 1
+                
+    if num_switched:
+        self.report({'INFO'}, "Switched " + str(num_switched) + " images")
+        print("Switched " + str(num_switched) + " images")
             
-def transferImageResolution(image):
+def transferImageResolution(image, scene):
     # Thanks to Vincent Gires for the following hack!
     if image.type == 'MULTILAYER':
         # HACK to get the resolution of a multilayer EXR through movieclip
@@ -86,9 +92,10 @@ def transferImageResolution(image):
         data.movieclips.remove(movieclip)
     else:
         x, y = image.size
-    #return x, y
-    bpy.context.scene.render.resolution_x = x
-    bpy.context.scene.render.resolution_y = y
+
+    # Passes the image's resolution to render resolution
+    scene.render.resolution_x = x
+    scene.render.resolution_y = y
 
 # -------------------------------------------------------------
 # OPERATORS
@@ -99,11 +106,26 @@ class SM_OT_SmurfSwitch1(Operator):
     bl_idname = "sm.smurfab"
     bl_description = "Replaces string A with string B in the image filename (to load an alternate version)"
     
+    @classmethod
+    def poll(cls, context):
+        smurf = context.scene.smurf
+        tree = context.scene.node_tree
+        tgt_img = 0        
+        
+        # Checks if the string to be replaced is contained in any of the images' filepath.
+        for nodes in tree.nodes:
+            if nodes.type == 'IMAGE':
+                if nodes.image:
+                    if nodes.image.filepath.find(smurf.suf1) + 1:
+                        tgt_img += 1
+        
+        return tgt_img
+    
     def execute(self, context):
         scene = context.scene
         smurf = scene.smurf
         
-        switch_suffix(smurf.suf1, smurf.suf2)
+        switch_suffix(smurf.suf1, smurf.suf2, scene, self)
         
         return {'FINISHED'}
 
@@ -112,11 +134,26 @@ class SM_OT_SmurfSwitch2(Operator):
     bl_idname = "sm.smurfba"
     bl_description = "Replaces string B with string A in the image filename"
     
+    @classmethod
+    def poll(cls, context):
+        smurf = context.scene.smurf
+        tree = context.scene.node_tree
+        tgt_img = 0        
+        
+        # Checks if the string to be replaced is contained in any of the images' filepath.
+        for nodes in tree.nodes:
+            if nodes.type == 'IMAGE':
+                if nodes.image:
+                    if nodes.image.filepath.find(smurf.suf2) + 1:
+                        tgt_img += 1
+        
+        return tgt_img
+    
     def execute(self, context):
         scene = context.scene
         smurf = scene.smurf
         
-        switch_suffix(smurf.suf2, smurf.suf1)
+        switch_suffix(smurf.suf2, smurf.suf1, scene, self)
         
         return {'FINISHED'}
     
@@ -126,18 +163,18 @@ class SM_OT_transferImageResolution(Operator):
     bl_description = "Automatically sets the render resolution from the active image node"
     
     @classmethod
-    def poll(cls,context):
-        # This operator will only be active if the active node is an image node, with an image loaded.
-        tree = bpy.context.scene.node_tree
+    def poll(cls, context):
+        tree = context.scene.node_tree
         
+        # This operator will only be active if the active node is an image node with an image loaded.
         if tree.nodes.active.type == 'IMAGE':
             return tree.nodes.active.image
     
     def execute(self, context):
+        scene = context.scene        
+        tree = scene.node_tree
         
-        tree = bpy.context.scene.node_tree
-        
-        transferImageResolution(tree.nodes.active.image)
+        transferImageResolution(tree.nodes.active.image, scene)
                 
         return {'FINISHED'}
     
