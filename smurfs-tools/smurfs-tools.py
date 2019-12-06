@@ -50,17 +50,19 @@ from bpy.types import (Panel,
 # Properties
 # ------------------------------------------------------------
 
+
 class SmurfProps(PropertyGroup):
     suf1: StringProperty(
         name="A",
-        description="Suffix used in the filenames of your currently loaded images (i.e. your low def proxy)",
+        description="Suffix used in the filenames of your currently "
+        "loaded images (i.e. your low def proxy)",
         default="_lodef",
         maxlen=1024,
         )
-    
     suf2: StringProperty(
         name="B",
-        description="Suffix used in the filenames of your alternate images (i.e. your high def image)",
+        description="Suffix used in the filenames of your alternate "
+        "images (i.e. your high def image)",
         default="_hidef",
         maxlen=1024,
         )
@@ -68,6 +70,7 @@ class SmurfProps(PropertyGroup):
 # -------------------------------------------------------------
 # Fonctions
 # -------------------------------------------------------------
+
 
 def switch_suffix(a, b, scene, self):    
     tree = scene.node_tree
@@ -113,7 +116,8 @@ def transfer_img_res(image, scene, self):
 class SM_OT_SmurfSwitch1(Operator):
     bl_label = "Switch A --> B"
     bl_idname = "sm.smurfab"
-    bl_description = "Replaces string A with string B in the image filename (to load an alternate version)"
+    bl_description = "Replaces string A with string B in the image "
+    "filename (to load an alternate version)"
         
     @classmethod
     def poll(cls, context):
@@ -122,8 +126,9 @@ class SM_OT_SmurfSwitch1(Operator):
         tree = context.scene.node_tree
         tgt_nodes = []
         
-        '''Checks if the string to be replaced (A) is contained in any of the images' filepath,
-        and if the potential outcome of switching it to B would point to an existing file.
+        '''Checks if the string to be replaced (A) is contained
+        in any of the images' filepath, and if the potential outcome
+        of switching it to B would point to an existing file.
         '''
         for nodes in tree.nodes:
             if nodes.type == 'IMAGE':
