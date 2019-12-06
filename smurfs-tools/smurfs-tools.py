@@ -20,7 +20,7 @@ bl_info = {
     "name": "Smurfs Tools",
     "description": "Basic Proxy tool for Compositor - Node Wrangler addon must be activated",
     "author": "redj",
-    "version": (0, 0, 5),
+    "version": (0, 0, 7),
     "blender": (2, 81, 0),
     "location": "Compositor > Properties Panel > Item",
     "warning": "",
@@ -32,6 +32,10 @@ bl_info = {
 import bpy
 
 from bpy import data
+
+import bpy.path as bpath
+
+import os.path as opath
 
 from bpy.props import (StringProperty,
                        PointerProperty,
@@ -46,8 +50,7 @@ from bpy.types import (Panel,
 # Properties
 # ------------------------------------------------------------
 
-class smurfProps(PropertyGroup):
-
+class SmurfProps(PropertyGroup):
     suf1: StringProperty(
         name="A",
         description="Suffix used in the filenames of your currently loaded images (i.e. your low def proxy)",
@@ -66,9 +69,7 @@ class smurfProps(PropertyGroup):
 # Fonctions
 # -------------------------------------------------------------
 
-
-def switch_suffix(a, b, scene, self):
-    
+def switch_suffix(a, b, scene, self):    
     tree = scene.node_tree
     num_switched = 0
     
@@ -78,12 +79,12 @@ def switch_suffix(a, b, scene, self):
                 nodes.image.filepath = nodes.image.filepath.replace(a, b)
                 nodes.image.name = nodes.image.name.replace(a, b)
                 num_switched += 1
-                
-    if num_switched:
-        self.report({'INFO'}, "Switched " + str(num_switched) + " images")
-        print("Switched " + str(num_switched) + " images")
+        
+    self.report({'INFO'}, "Switched " + str(num_switched) + " images")
+    print("Switched " + str(num_switched) + " images")
+
             
-def transferImageResolution(image, scene):
+def transfer_img_res(image, scene, self):
     # Thanks to Vincent Gires for the following hack!
     if image.type == 'MULTILAYER':
         # HACK to get the resolution of a multilayer EXR through movieclip
@@ -93,9 +94,17 @@ def transferImageResolution(image, scene):
     else:
         x, y = image.size
 
-    # Passes the image's resolution to render resolution
-    scene.render.resolution_x = x
-    scene.render.resolution_y = y
+    if scene.render.resolution_x == x and scene.render.resolution_y == y:
+        self.report({'INFO'}, "Resolution already matching")
+        print(f"Image and Render have same dimensions: {x} by {y}")
+
+    else:
+        # Passes the image's resolution to render resolution
+        scene.render.resolution_x = x
+        scene.render.resolution_y = y
+        self.report({'INFO'}, "Render size changed")
+        print(f"Render size set to {x} by {y}")
+
 
 # -------------------------------------------------------------
 # OPERATORS
@@ -105,21 +114,25 @@ class SM_OT_SmurfSwitch1(Operator):
     bl_label = "Switch A --> B"
     bl_idname = "sm.smurfab"
     bl_description = "Replaces string A with string B in the image filename (to load an alternate version)"
-    
+        
     @classmethod
     def poll(cls, context):
-        smurf = context.scene.smurf
+        scene = context.scene
+        smurf = scene.smurf
         tree = context.scene.node_tree
-        tgt_img = 0        
+        tgt_nodes = []
         
-        # Checks if the string to be replaced is contained in any of the images' filepath.
+        '''Checks if the string to be replaced (A) is contained in any of the images' filepath,
+        and if the potential outcome of switching it to B would point to an existing file.
+        '''
         for nodes in tree.nodes:
             if nodes.type == 'IMAGE':
                 if nodes.image:
-                    if nodes.image.filepath.find(smurf.suf1) + 1:
-                        tgt_img += 1
-        
-        return tgt_img
+                    if smurf.suf1 in bpath.basename(nodes.image.filepath):
+                        nodepath = bpath.abspath(nodes.image.filepath).replace(smurf.suf1, smurf.suf2)
+                        if opath.isfile(nodepath):
+                            tgt_nodes.append(nodes.name)        
+        return tgt_nodes        
     
     def execute(self, context):
         scene = context.scene
@@ -136,18 +149,22 @@ class SM_OT_SmurfSwitch2(Operator):
     
     @classmethod
     def poll(cls, context):
-        smurf = context.scene.smurf
+        scene = context.scene
+        smurf = scene.smurf
         tree = context.scene.node_tree
-        tgt_img = 0        
+        tgt_nodes = []
         
-        # Checks if the string to be replaced is contained in any of the images' filepath.
+        '''Checks if the string to be replaced (B) is contained in any of the images' filepath,
+        and if the potential outcome of switching it to A would point to an existing file.
+        '''
         for nodes in tree.nodes:
             if nodes.type == 'IMAGE':
                 if nodes.image:
-                    if nodes.image.filepath.find(smurf.suf2) + 1:
-                        tgt_img += 1
-        
-        return tgt_img
+                    if smurf.suf2 in bpath.basename(nodes.image.filepath):
+                        nodepath = bpath.abspath(nodes.image.filepath).replace(smurf.suf2, smurf.suf1)
+                        if opath.isfile(nodepath):
+                            tgt_nodes.append(nodes.name)        
+        return tgt_nodes
     
     def execute(self, context):
         scene = context.scene
@@ -157,7 +174,7 @@ class SM_OT_SmurfSwitch2(Operator):
         
         return {'FINISHED'}
     
-class SM_OT_transferImageResolution(Operator):
+class SM_OT_TransferImageRes(Operator):
     bl_label = "Set Resolution From Active"
     bl_idname = "sm.smurfimgres"
     bl_description = "Automatically sets the render resolution from the active image node"
@@ -174,7 +191,7 @@ class SM_OT_transferImageResolution(Operator):
         scene = context.scene        
         tree = scene.node_tree
         
-        transferImageResolution(tree.nodes.active.image, scene)
+        transfer_img_res(tree.nodes.active.image, scene, self)
                 
         return {'FINISHED'}
     
@@ -182,7 +199,7 @@ class SM_OT_transferImageResolution(Operator):
 # INTERFACE
 # --------------------------------------------------------------
 
-class smurfPanel(bpy.types.Panel):
+class SmurfPanel(bpy.types.Panel):
     bl_label = "Smurfs Tools"
     bl_idname = "NODE_PT_smurfs"
     bl_space_type = 'NODE_EDITOR'
@@ -224,9 +241,9 @@ class smurfPanel(bpy.types.Panel):
 
         col.separator()
 
-        col.operator(SM_OT_transferImageResolution.bl_idname, icon='NODE_SEL')
+        col.operator(SM_OT_TransferImageRes.bl_idname, icon='NODE_SEL')
 
-class colorManagement(bpy.types.Panel):
+class ColorManagement(bpy.types.Panel):
     # Duplicate of the same panel from render properties - handy to access it from here
     bl_label = "Color Management"
     bl_idname = "NODE_PT_color_management"
@@ -265,17 +282,17 @@ class colorManagement(bpy.types.Panel):
 classes = (
     SM_OT_SmurfSwitch1,
     SM_OT_SmurfSwitch2,
-    SM_OT_transferImageResolution,
-    smurfProps,
-    smurfPanel,
-    colorManagement,
+    SM_OT_TransferImageRes,
+    SmurfProps,
+    SmurfPanel,
+    ColorManagement,
 )
 
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
     
-    bpy.types.Scene.smurf = PointerProperty(type=smurfProps)
+    bpy.types.Scene.smurf = PointerProperty(type=SmurfProps)
     
 def unregister():
     for cls in classes:
