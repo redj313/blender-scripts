@@ -73,21 +73,21 @@ class SmurfProps(PropertyGroup):
 # -------------------------------------------------------------
 
 
-def switch_suffix(a, b, scene, self):    
+def switch_suffix(a, b, scene, self):
     tree = scene.node_tree
     num_switched = 0
-    
+
     for nodes in tree.nodes:
         if nodes.type == 'IMAGE':
             if nodes.image:
                 nodes.image.filepath = nodes.image.filepath.replace(a, b)
                 nodes.image.name = nodes.image.name.replace(a, b)
                 num_switched += 1
-        
+
     self.report({'INFO'}, "Switched " + str(num_switched) + " images")
     print("Switched " + str(num_switched) + " images")
 
-            
+
 def transfer_img_res(image, scene, self):
     # Thanks to Vincent Gires for the following hack!
     if image.type == 'MULTILAYER':
@@ -119,14 +119,14 @@ class SM_OT_SmurfSwitch1(Operator):
     bl_idname = "sm.smurfab"
     bl_description = "Replaces string A with string B in the image "
     "filename (to load an alternate version)"
-        
+
     @classmethod
     def poll(cls, context):
         scene = context.scene
         smurf = scene.smurf
         tree = context.scene.node_tree
         tgt_nodes = []
-        
+
         '''Checks if the string to be replaced (A) is contained
         in any of the images' filepath, and if the potential outcome
         of switching it to B would point to an existing file.
@@ -137,29 +137,29 @@ class SM_OT_SmurfSwitch1(Operator):
                     if smurf.suf1 in bpath.basename(nodes.image.filepath):
                         nodepath = bpath.abspath(nodes.image.filepath).replace(smurf.suf1, smurf.suf2)
                         if opath.isfile(nodepath):
-                            tgt_nodes.append(nodes.name)        
-        return tgt_nodes        
-    
+                            tgt_nodes.append(nodes.name)
+        return tgt_nodes
+
     def execute(self, context):
         scene = context.scene
         smurf = scene.smurf
-        
+
         switch_suffix(smurf.suf1, smurf.suf2, scene, self)
-        
+
         return {'FINISHED'}
 
 class SM_OT_SmurfSwitch2(Operator):
     bl_label = "Switch B --> A"
     bl_idname = "sm.smurfba"
     bl_description = "Replaces string B with string A in the image filename"
-    
+
     @classmethod
     def poll(cls, context):
         scene = context.scene
         smurf = scene.smurf
         tree = context.scene.node_tree
         tgt_nodes = []
-        
+
         '''Checks if the string to be replaced (B) is contained in any of the images' filepath,
         and if the potential outcome of switching it to A would point to an existing file.
         '''
@@ -169,38 +169,38 @@ class SM_OT_SmurfSwitch2(Operator):
                     if smurf.suf2 in bpath.basename(nodes.image.filepath):
                         nodepath = bpath.abspath(nodes.image.filepath).replace(smurf.suf2, smurf.suf1)
                         if opath.isfile(nodepath):
-                            tgt_nodes.append(nodes.name)        
+                            tgt_nodes.append(nodes.name)
         return tgt_nodes
-    
+
     def execute(self, context):
         scene = context.scene
         smurf = scene.smurf
-        
+
         switch_suffix(smurf.suf2, smurf.suf1, scene, self)
-        
+
         return {'FINISHED'}
-    
+
 class SM_OT_TransferImageRes(Operator):
     bl_label = "Set Resolution From Active"
     bl_idname = "sm.smurfimgres"
     bl_description = "Automatically sets the render resolution from the active image node"
-    
+
     @classmethod
     def poll(cls, context):
         tree = context.scene.node_tree
-        
+
         # This operator will only be active if the active node is an image node with an image loaded.
         if tree.nodes.active.type == 'IMAGE':
             return tree.nodes.active.image
-    
+
     def execute(self, context):
-        scene = context.scene        
+        scene = context.scene
         tree = scene.node_tree
-        
+
         transfer_img_res(tree.nodes.active.image, scene, self)
-                
+
         return {'FINISHED'}
-    
+
 # --------------------------------------------------------------
 # INTERFACE
 # --------------------------------------------------------------
@@ -211,19 +211,19 @@ class SmurfPanel(bpy.types.Panel):
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = "UI"
     bl_category = "Item"
-    
+
     def draw(self, context):
         layout = self.layout
         scene = context.scene
         smurf = scene.smurf
         rd = scene.render
-        
+
         layout.label(text="Proxy Image Switch")
-        
+
         layout.prop(smurf, "suf1")
         layout.prop(smurf, "suf2")
-        
-        row = layout.row(align=True)  
+
+        row = layout.row(align=True)
 
         row.operator(SM_OT_SmurfSwitch1.bl_idname, icon='LOOP_FORWARDS')
         row.operator(SM_OT_SmurfSwitch2.bl_idname, icon='LOOP_BACK')
@@ -231,9 +231,9 @@ class SmurfPanel(bpy.types.Panel):
         col = layout.column(align=True)
 
         col.separator()
-        # The following operator is from the Node Wrangler addon - it has to be activated obviously.         
+        # The following operator is from the Node Wrangler addon - it has to be activated obviously.
         col.operator(bpy.types.NODE_OT_nw_reload_images.bl_idname, icon='FILE_REFRESH')
-        
+
         col.separator()
         col.separator()
 
@@ -280,7 +280,7 @@ class ColorManagement(bpy.types.Panel):
         col.prop(view, "gamma")
 
         col.separator()
-                
+
 # --------------------------------------------------------------
 # REGISTER
 # --------------------------------------------------------------
@@ -297,13 +297,13 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
-    
+
     bpy.types.Scene.smurf = PointerProperty(type=SmurfProps)
-    
+
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
-    
+
     del bpy.types.Scene.smurf
 
 if __name__ == "__main__":
