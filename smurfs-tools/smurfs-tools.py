@@ -16,6 +16,13 @@
 #
 # ##### END GPL LICENSE BLOCK #####
 
+import bpy
+from bpy import data
+import bpy.path as bpath
+import os.path as opath
+from bpy.props import StringProperty, PointerProperty
+from bpy.types import Panel, Operator, PropertyGroup
+
 bl_info = {
     "name": "Smurfs Tools",
     "description": "Basic Proxy tool for Compositor - "
@@ -30,23 +37,6 @@ bl_info = {
     "category": "Node",
 }
 
-import bpy
-
-from bpy import data
-
-import bpy.path as bpath
-
-import os.path as opath
-
-from bpy.props import (StringProperty,
-                       PointerProperty,
-                       )
-
-from bpy.types import (Panel,
-                       Operator,
-                       PropertyGroup,
-                       )
-
 # ------------------------------------------------------------
 # Properties
 # ------------------------------------------------------------
@@ -55,18 +45,18 @@ from bpy.types import (Panel,
 class SmurfProps(PropertyGroup):
     suf1: StringProperty(
         name="A",
-        description="Suffix used in the filenames of your currently "
-        "loaded images (i.e. your low def proxy)",
+        description=(
+            "Suffix used in the filenames of your currently "
+            "loaded images (i.e. your low def proxy)"),
         default="_lodef",
-        maxlen=1024,
-        )
+        maxlen=1024)
     suf2: StringProperty(
         name="B",
-        description="Suffix used in the filenames of your alternate "
-        "images (i.e. your high def image)",
+        description=(
+            "Suffix used in the filenames of your alternate "
+            "images (i.e. your high def image)"),
         default="_hidef",
-        maxlen=1024,
-        )
+        maxlen=1024)
 
 # -------------------------------------------------------------
 # Fonctions
@@ -122,15 +112,15 @@ class SM_OT_SmurfSwitch1(Operator):
 
     @classmethod
     def poll(cls, context):
+        """Checks if the string to be replaced (A) is contained
+        in any of the images' filepath, and if the potential outcome
+        of switching it to B would point to an existing file.
+        """
         scene = context.scene
         smurf = scene.smurf
         tree = context.scene.node_tree
         tgt_nodes = []
 
-        '''Checks if the string to be replaced (A) is contained
-        in any of the images' filepath, and if the potential outcome
-        of switching it to B would point to an existing file.
-        '''
         for nodes in tree.nodes:
             if nodes.type == 'IMAGE':
                 if nodes.image:
@@ -143,10 +133,9 @@ class SM_OT_SmurfSwitch1(Operator):
     def execute(self, context):
         scene = context.scene
         smurf = scene.smurf
-
         switch_suffix(smurf.suf1, smurf.suf2, scene, self)
-
         return {'FINISHED'}
+
 
 class SM_OT_SmurfSwitch2(Operator):
     bl_label = "Switch B --> A"
@@ -155,14 +144,15 @@ class SM_OT_SmurfSwitch2(Operator):
 
     @classmethod
     def poll(cls, context):
+        """Checks if the string to be replaced (B) is contained in any of the
+        image's filepath, and if the potential outcome of switching it to A
+        would point to an existing file.
+        """
         scene = context.scene
         smurf = scene.smurf
         tree = context.scene.node_tree
         tgt_nodes = []
 
-        '''Checks if the string to be replaced (B) is contained in any of the images' filepath,
-        and if the potential outcome of switching it to A would point to an existing file.
-        '''
         for nodes in tree.nodes:
             if nodes.type == 'IMAGE':
                 if nodes.image:
@@ -175,35 +165,36 @@ class SM_OT_SmurfSwitch2(Operator):
     def execute(self, context):
         scene = context.scene
         smurf = scene.smurf
-
         switch_suffix(smurf.suf2, smurf.suf1, scene, self)
-
         return {'FINISHED'}
+
 
 class SM_OT_TransferImageRes(Operator):
     bl_label = "Set Resolution From Active"
     bl_idname = "sm.smurfimgres"
-    bl_description = "Automatically sets the render resolution from the active image node"
+    bl_description = (
+        "Automatically sets the render resolution from the active image node")
 
     @classmethod
     def poll(cls, context):
         tree = context.scene.node_tree
 
-        # This operator will only be active if the active node is an image node with an image loaded.
+        # This operator will only be active if the active node is an image node
+        # with an image loaded.
         if tree.nodes.active.type == 'IMAGE':
             return tree.nodes.active.image
 
     def execute(self, context):
         scene = context.scene
         tree = scene.node_tree
-
         transfer_img_res(tree.nodes.active.image, scene, self)
-
         return {'FINISHED'}
+
 
 # --------------------------------------------------------------
 # INTERFACE
 # --------------------------------------------------------------
+
 
 class SmurfPanel(bpy.types.Panel):
     bl_label = "Smurfs Tools"
@@ -231,8 +222,10 @@ class SmurfPanel(bpy.types.Panel):
         col = layout.column(align=True)
 
         col.separator()
-        # The following operator is from the Node Wrangler addon - it has to be activated obviously.
-        col.operator(bpy.types.NODE_OT_nw_reload_images.bl_idname, icon='FILE_REFRESH')
+        # The following operator is from the Node Wrangler addon.
+        # It has to be activated obviously.
+        col.operator(
+            bpy.types.NODE_OT_nw_reload_images.bl_idname, icon='FILE_REFRESH')
 
         col.separator()
         col.separator()
@@ -249,8 +242,10 @@ class SmurfPanel(bpy.types.Panel):
 
         col.operator(SM_OT_TransferImageRes.bl_idname, icon='NODE_SEL')
 
+
 class ColorManagement(bpy.types.Panel):
-    # Duplicate of the same panel from render properties - handy to access it from here
+    """Duplicate of the same panel from render properties
+    handy to access it from here."""
     bl_label = "Color Management"
     bl_idname = "NODE_PT_color_management"
     bl_space_type = 'NODE_EDITOR'
@@ -265,7 +260,9 @@ class ColorManagement(bpy.types.Panel):
         scene = context.scene
         view = scene.view_settings
 
-        flow = layout.grid_flow(row_major=True, columns=0, even_columns=False, even_rows=False, align=True)
+        flow = layout.grid_flow(
+            row_major=True, columns=0,
+            even_columns=False, even_rows=False, align=True)
 
         col = flow.column()
         col.prop(scene.display_settings, "display_device")
@@ -285,6 +282,7 @@ class ColorManagement(bpy.types.Panel):
 # REGISTER
 # --------------------------------------------------------------
 
+
 classes = (
     SM_OT_SmurfSwitch1,
     SM_OT_SmurfSwitch2,
@@ -294,17 +292,20 @@ classes = (
     ColorManagement,
 )
 
+
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
 
     bpy.types.Scene.smurf = PointerProperty(type=SmurfProps)
 
+
 def unregister():
     for cls in classes:
         bpy.utils.unregister_class(cls)
 
     del bpy.types.Scene.smurf
+
 
 if __name__ == "__main__":
     register()
