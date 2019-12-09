@@ -172,8 +172,9 @@ class SM_OT_TransferImageRes(Operator):
 
     @classmethod
     def poll(cls, context):
+        if not context.scene.use_nodes:
+            return
         tree = context.scene.node_tree
-
         # This operator will only be active if the active node is an image node
         # with an image loaded.
         if tree.nodes.active.type == 'IMAGE':
