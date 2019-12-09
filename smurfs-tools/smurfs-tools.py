@@ -63,17 +63,17 @@ class SmurfProps(PropertyGroup):
 # -------------------------------------------------------------
 
 
-def switch_suffix(nodes, a, b, self):
-    num_switched = 0
+def switch_suffix(nodes, a, b):
+    switched_nodes = []
     for node in nodes:
         if not node.image:
             continue
         node.image.filepath = node.image.filepath.replace(a, b)
         node.image.name = node.image.name.replace(a, b)
-        num_switched += 1
-
-    self.report({'INFO'}, "Switched " + str(num_switched) + " images")
-    print("Switched " + str(num_switched) + " images")
+        switched_nodes.append(node)
+    if switched_nodes:
+        print("Switched " + str(len(switched_nodes)) + " images")
+    return switched_nodes
 
 
 def transfer_img_res(image, scene, self):
@@ -135,7 +135,8 @@ class SM_OT_SmurfSwitch1(Operator):
         scene = context.scene
         smurf = scene.smurf
         nodes = get_image_nodes_to_switch(scene, smurf.suf1, smurf.suf2)
-        switch_suffix(nodes, smurf.suf1, smurf.suf2, self)
+        switched_nodes = switch_suffix(nodes, smurf.suf1, smurf.suf2, self)
+        self.report({'INFO'}, f"Switched {(len(switched_nodes))} images")
         return {'FINISHED'}
 
 
@@ -158,7 +159,8 @@ class SM_OT_SmurfSwitch2(Operator):
         scene = context.scene
         smurf = scene.smurf
         nodes = get_image_nodes_to_switch(scene, smurf.suf2, smurf.suf1)
-        switch_suffix(nodes, smurf.suf2, smurf.suf1, self)
+        switched_nodes = switch_suffix(nodes, smurf.suf2, smurf.suf1, self)
+        self.report({'INFO'}, f"Switched {(len(switched_nodes))} images")
         return {'FINISHED'}
 
 
