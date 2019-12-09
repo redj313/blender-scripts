@@ -63,16 +63,14 @@ class SmurfProps(PropertyGroup):
 # -------------------------------------------------------------
 
 
-def switch_suffix(a, b, scene, self):
-    tree = scene.node_tree
+def switch_suffix(nodes, a, b, self):
     num_switched = 0
-
-    for nodes in tree.nodes:
-        if nodes.type == 'IMAGE':
-            if nodes.image:
-                nodes.image.filepath = nodes.image.filepath.replace(a, b)
-                nodes.image.name = nodes.image.name.replace(a, b)
-                num_switched += 1
+    for node in nodes:
+        if not node.image:
+            continue
+        node.image.filepath = node.image.filepath.replace(a, b)
+        node.image.name = node.image.name.replace(a, b)
+        num_switched += 1
 
     self.report({'INFO'}, "Switched " + str(num_switched) + " images")
     print("Switched " + str(num_switched) + " images")
@@ -100,6 +98,19 @@ def transfer_img_res(image, scene, self):
         print(f"Render size set to {x} by {y}")
 
 
+def get_image_nodes_to_switch(scene, a, b):
+    if not scene.use_nodes:
+        return
+    nodes = [n for n in scene.node_tree.nodes if n.type == 'IMAGE']
+    available_nodes = []
+    for node in nodes:
+        if a in bpath.basename(node.image.filepath):
+            nodepath = bpath.abspath(node.image.filepath).replace(a, b)
+            if opath.isfile(nodepath):
+                available_nodes.append()
+    return available_nodes
+
+
 # -------------------------------------------------------------
 # OPERATORS
 # -------------------------------------------------------------
@@ -118,22 +129,13 @@ class SM_OT_SmurfSwitch1(Operator):
         """
         scene = context.scene
         smurf = scene.smurf
-        tree = context.scene.node_tree
-        tgt_nodes = []
-
-        for nodes in tree.nodes:
-            if nodes.type == 'IMAGE':
-                if nodes.image:
-                    if smurf.suf1 in bpath.basename(nodes.image.filepath):
-                        nodepath = bpath.abspath(nodes.image.filepath).replace(smurf.suf1, smurf.suf2)
-                        if opath.isfile(nodepath):
-                            tgt_nodes.append(nodes.name)
-        return tgt_nodes
+        return get_image_nodes_to_switch(scene, smurf.suf1, smurf.suf2)
 
     def execute(self, context):
         scene = context.scene
         smurf = scene.smurf
-        switch_suffix(smurf.suf1, smurf.suf2, scene, self)
+        nodes = get_image_nodes_to_switch(scene, smurf.suf1, smurf.suf2)
+        switch_suffix(nodes, smurf.suf1, smurf.suf2, self)
         return {'FINISHED'}
 
 
@@ -150,22 +152,13 @@ class SM_OT_SmurfSwitch2(Operator):
         """
         scene = context.scene
         smurf = scene.smurf
-        tree = context.scene.node_tree
-        tgt_nodes = []
-
-        for nodes in tree.nodes:
-            if nodes.type == 'IMAGE':
-                if nodes.image:
-                    if smurf.suf2 in bpath.basename(nodes.image.filepath):
-                        nodepath = bpath.abspath(nodes.image.filepath).replace(smurf.suf2, smurf.suf1)
-                        if opath.isfile(nodepath):
-                            tgt_nodes.append(nodes.name)
-        return tgt_nodes
+        return get_image_nodes_to_switch(scene, smurf.suf2, smurf.suf1)
 
     def execute(self, context):
         scene = context.scene
         smurf = scene.smurf
-        switch_suffix(smurf.suf2, smurf.suf1, scene, self)
+        nodes = get_image_nodes_to_switch(scene, smurf.suf2, smurf.suf1)
+        switch_suffix(nodes, smurf.suf2, smurf.suf1, self)
         return {'FINISHED'}
 
 
