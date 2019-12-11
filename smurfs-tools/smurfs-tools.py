@@ -27,8 +27,8 @@ bl_info = {
     "name": "Smurfs Tools",
     "description": "Basic Proxy tool for Compositor - "
     "Node Wrangler addon must be activated",
-    "author": "redj, Vincent Gires",
-    "version": (0, 0, 9),
+    "author": "Regis Gobbin, Vincent Gires",
+    "version": (0, 1, 0),
     "blender": (2, 81, 0),
     "location": "Compositor > Properties Panel > Item",
     "warning": "",
@@ -63,19 +63,14 @@ class SmurfProps(PropertyGroup):
 # -------------------------------------------------------------
 
 
-def switch_suffix(context, nodes_selec, a, b):
-    nodes = context.scene.node_tree.nodes
+def switch_suffix(nodes_selec, a, b):
     switched_nodes = []
-    for node in nodes:
-        #if not node.type == 'IMAGE':
-            #continue
-        #if not node.image:
-            #continue
-        if node.name not in nodes_selec:
+    for node in nodes_selec:
+        if not node.image:
             continue
         node.image.filepath = node.image.filepath.replace(a, b)
         node.image.name = node.image.name.replace(a, b)
-        switched_nodes.append(node.name)
+        switched_nodes.append(node)
     if switched_nodes:
         print("Switched " + str(len(switched_nodes)) + " images")
     return switched_nodes
@@ -112,7 +107,7 @@ def get_image_nodes_to_switch(scene, a, b):
         if a in bpath.basename(node.image.filepath):
             nodepath = bpath.abspath(node.image.filepath).replace(a, b)
             if opath.isfile(nodepath):
-                available_nodes.append(node.name)
+                available_nodes.append(node)
     return available_nodes
 
 
@@ -142,7 +137,7 @@ class SM_OT_SmurfSwitch1(Operator):
         suf2 = scene.smurf.suf2
         nodes_selec = get_image_nodes_to_switch(scene, suf1, suf2)
         #get_image_nodes_to_switch(scene, smurf.suf1, smurf.suf2)
-        switched_nodes = switch_suffix(context, nodes_selec, suf1, suf2)
+        switched_nodes = switch_suffix(nodes_selec, suf1, suf2)
         #switch_suffix(context, nodes_selec, smurf.suf1, smurf.suf2)
         self.report({'INFO'}, f"Switched {(len(switched_nodes))} images")
         return {'FINISHED'}
@@ -168,7 +163,7 @@ class SM_OT_SmurfSwitch2(Operator):
         suf1 = scene.smurf.suf1
         suf2 = scene.smurf.suf2
         nodes_selec = get_image_nodes_to_switch(scene, suf2, suf1)
-        switched_nodes = switch_suffix(context, nodes_selec, suf2, suf1)
+        switched_nodes = switch_suffix(nodes_selec, suf2, suf1)
         self.report({'INFO'}, f"Switched {(len(switched_nodes))} images")
         return {'FINISHED'}
 
