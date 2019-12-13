@@ -17,7 +17,6 @@
 # ##### END GPL LICENSE BLOCK #####
 
 import bpy
-from bpy import data
 import bpy.path as bpath
 import os.path as opath
 from bpy.props import StringProperty, PointerProperty
@@ -80,9 +79,9 @@ def transfer_img_res(image, scene, self):
     # Thanks to Vincent Gires for the following hack!
     if image.type == 'MULTILAYER':
         # HACK to get the resolution of a multilayer EXR through movieclip
-        movieclip = data.movieclips.load(image.filepath)
+        movieclip = bpy.data.movieclips.load(image.filepath)
         x, y = movieclip.size
-        data.movieclips.remove(movieclip)
+        bpy.data.movieclips.remove(movieclip)
     else:
         x, y = image.size
 
@@ -181,8 +180,9 @@ class SM_OT_TransferImageRes(Operator):
         tree = context.scene.node_tree
         # This operator will only be active if the active node is an image node
         # with an image loaded.
-        if tree.nodes.active.type == 'IMAGE':
-            return tree.nodes.active.image
+        if tree.nodes.active:
+            if tree.nodes.active.type == 'IMAGE':
+                return tree.nodes.active.image
 
     def execute(self, context):
         scene = context.scene
