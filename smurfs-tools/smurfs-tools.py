@@ -29,7 +29,7 @@ bl_info = {
     "author": "Regis Gobbin, Vincent Gires",
     "version": (0, 1, 0),
     "blender": (2, 81, 0),
-    "location": "Compositor > Properties Panel > Item",
+    "location": "Compositor > Properties Panel > Node",
     "warning": "",
     "wiki_url": "",
     "tracker_url": "",
