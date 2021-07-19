@@ -201,7 +201,7 @@ class SmurfPanel(bpy.types.Panel):
     bl_idname = "NODE_PT_smurfs"
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = "UI"
-    bl_category = "Item"
+    bl_category = "Node"
 
     def draw(self, context):
         layout = self.layout
@@ -250,7 +250,7 @@ class ColorManagement(bpy.types.Panel):
     bl_idname = "NODE_PT_color_management"
     bl_space_type = 'NODE_EDITOR'
     bl_region_type = "UI"
-    bl_category = "Item"
+    bl_category = "Node"
 
     def draw(self, context):
         layout = self.layout
