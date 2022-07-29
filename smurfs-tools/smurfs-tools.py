@@ -190,6 +190,28 @@ class SM_OT_TransferImageRes(Operator):
         transfer_img_res(tree.nodes.active.image, scene, self)
         return {'FINISHED'}
 
+class SM_OT_SmurfSet2K(Operator):
+    bl_label = "Set to 2K"
+    bl_idname = "sm.smurf2k"
+    bl_description = "Sets render resolution to 2K square"
+
+    def execute(self, context):
+        bpy.context.scene.render.resolution_x = 2048
+        bpy.context.scene.render.resolution_y = 2048
+        print(f"Render size set to 2048 square")
+        return {'FINISHED'}
+    
+class SM_OT_SmurfSet8K(Operator):
+    bl_label = "Set to 8K"
+    bl_idname = "sm.smurf8k"
+    bl_description = "Sets render resolution to 8K square"
+
+    def execute(self, context):
+        bpy.context.scene.render.resolution_x = 8192
+        bpy.context.scene.render.resolution_y = 8192
+        print(f"Render size set to 8192 square")
+        return {'FINISHED'}
+
 
 # --------------------------------------------------------------
 # INTERFACE
@@ -228,17 +250,23 @@ class SmurfPanel(bpy.types.Panel):
             bpy.types.NODE_OT_nw_reload_images.bl_idname, icon='FILE_REFRESH')
 
         col.separator()
+        layout.label(text="Image Resolution")
         col.separator()
-
+        
         layout.use_property_split = True
         layout.use_property_decorate = False
 
         col = layout.column(align=True)
-        col.prop(rd, "resolution_x", text="Resolution X")
-        col.prop(rd, "resolution_y", text="Resolution Y")
+        col.prop(rd, "resolution_x", text="X")
+        col.prop(rd, "resolution_y", text="Y")
         col.prop(rd, "resolution_percentage", text="%")
 
-        col.separator()
+        row = layout.row(align=True)
+        
+        row.operator(SM_OT_SmurfSet2K.bl_idname, icon='RENDER_RESULT')
+        row.operator(SM_OT_SmurfSet8K.bl_idname, icon='RENDER_RESULT')
+        
+        col = layout.column(align=True)
 
         col.operator(SM_OT_TransferImageRes.bl_idname, icon='NODE_SEL')
 
@@ -287,6 +315,8 @@ classes = (
     SM_OT_SmurfSwitch1,
     SM_OT_SmurfSwitch2,
     SM_OT_TransferImageRes,
+    SM_OT_SmurfSet2K,
+    SM_OT_SmurfSet8K,
     SmurfProps,
     SmurfPanel,
     ColorManagement,
