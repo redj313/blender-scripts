@@ -24,11 +24,11 @@ from bpy.types import Panel, Operator, PropertyGroup
 
 bl_info = {
     "name": "Smurfs Tools",
-    "description": "Basic Proxy tool for Compositor - "
+    "description": "Basic Proxy tool for Compositor"
     "Node Wrangler addon must be activated",
     "author": "Regis Gobbin, Vincent Gires",
-    "version": (0, 1, 0),
-    "blender": (2, 81, 0),
+    "version": (0, 1, 2),
+    "blender": (4, 0, 2),
     "location": "Compositor > Properties Panel > Node",
     "warning": "",
     "wiki_url": "",
